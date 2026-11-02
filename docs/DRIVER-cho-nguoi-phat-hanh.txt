@@ -1,0 +1,35 @@
+=====================================================
+  CÁCH CHUẨN BỊ DRIVER APPLE ĐỂ NHÉT VÀO USB (Windows)
+  (phần này cho người phát hành, KHÔNG chép cho người dùng)
+=====================================================
+
+iPhone trên Windows cần "Apple Mobile Device Support". Có 3 cách để sẵn trên USB,
+chọn 1:
+
+CÁCH 1 — Gọn nhất, chỉ driver (~30 MB)  [khuyên dùng]
+  1. Tải trình cài iTunes 64-bit từ apple.com (file iTunes64Setup.exe).
+  2. Mở file đó bằng 7-Zip (chuột phải → 7-Zip → Open archive), KHÔNG cài.
+  3. Lấy ra file:  AppleMobileDeviceSupport64.msi
+  4. Chép file .msi đó vào thư mục  Driver\  trên USB (cạnh VitriAo.exe).
+  → App sẽ tự tìm thấy và chạy nó khi người dùng bấm "Cài driver Apple".
+
+CÁCH 2 — Đơn giản nhất, cả bộ iTunes (~200 MB)
+  Chép thẳng iTunes64Setup.exe vào thư mục  Driver\  trên USB.
+  Nhược điểm: nặng và cài thừa cả iTunes.
+
+CÁCH 3 — Không nhét gì, cần mạng
+  Để trống thư mục Driver. Khi bấm "Cài driver Apple", app mở trang
+  Microsoft Store để người dùng tự cài "Apple Devices".
+
+CẤU TRÚC USB SAU KHI XONG
+  USB\
+   ├─ VitriAo.exe                (hoặc "Vị trí ảo iPhone.app" trên Mac)
+   ├─ HUONG-DAN.txt
+   └─ Driver\
+        └─ AppleMobileDeviceSupport64.msi   (hoặc iTunes64Setup.exe)
+
+LƯU Ý BẢN QUYỀN (nói thẳng)
+  Apple không chính thức cho phép phân phối lại bộ cài iTunes/driver. Việc nhét
+  sẵn driver vào USB là vùng xám, tuy rất phổ biến trong giới công cụ iPhone.
+  Nếu muốn an toàn tuyệt đối về pháp lý, dùng CÁCH 3 (hướng người dùng tự tải
+  Apple Devices từ Microsoft Store).

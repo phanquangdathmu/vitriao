@@ -1,0 +1,89 @@
+name: Build
+
+# Chạy khi đẩy code lên nhánh main, hoặc khi tạo tag v* (để ra bản phát hành)
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:        # cho phép bấm chạy tay trong tab Actions
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: VitriAo-Windows
+          - os: macos-13           # Intel; chạy được cả trên máy Mac Apple Silicon qua Rosetta
+            artifact: VitriAo-macOS
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cài thư viện
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt pyinstaller
+
+      # Nhúng URL server kích hoạt + khóa công khai vào bản build.
+      # Đặt trong repo: Settings -> Secrets and variables -> Actions.
+      - name: Tạo appconfig
+        shell: bash
+        run: |
+          cat > app/appconfig.py <<EOF
+          ACTIVATE_URL = "${{ secrets.VITRIAO_ACTIVATE_URL }}"
+          PUBLIC_KEY_HEX = "${{ secrets.VITRIAO_PUBKEY }}"
+          EOF
+
+      - name: Đóng gói
+        run: pyinstaller build/vitriao.spec --noconfirm
+
+      # Gộp file chạy + README thành thư mục để chép thẳng ra USB
+      - name: Gom bản phát hành (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/pkg | Out-Null
+          New-Item -ItemType Directory -Force dist/pkg/Driver | Out-Null
+          Copy-Item dist/VitriAo.exe dist/pkg/
+          Copy-Item docs/HUONG-DAN.txt dist/pkg/ -ErrorAction SilentlyContinue
+          "Dat file driver Apple (AppleMobileDeviceSupport64.msi) vao thu muc nay. Xem docs/DRIVER-cho-nguoi-phat-hanh.txt" | Out-File -Encoding utf8 dist/pkg/Driver/DAT-DRIVER-VAO-DAY.txt
+
+      - name: Gom bản phát hành (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist/pkg
+          cp -R "dist/Vị trí ảo iPhone.app" dist/pkg/
+          cp docs/HUONG-DAN.txt dist/pkg/ 2>/dev/null || true
+
+      - name: Tải bản build lên
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/pkg
+
+  # Khi đẩy tag v* thì tạo luôn một bản Release để tải về
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - name: Nén từng nền tảng
+        run: |
+          cd out
+          for d in */; do (cd "$d" && zip -r "../${d%/}.zip" .); done
+          ls -la
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.zip

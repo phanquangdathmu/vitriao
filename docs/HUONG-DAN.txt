@@ -1,0 +1,50 @@
+===========================================
+   VỊ TRÍ ẢO iPHONE — HƯỚNG DẪN SỬ DỤNG
+===========================================
+
+CHUẨN BỊ (chỉ làm 1 lần trên mỗi máy)
+
+  • Windows: máy phải có driver Apple thì mới nhận iPhone.
+    - Nếu máy ĐÃ từng cắm iPhone / cài iTunes: bỏ qua, dùng được luôn.
+    - Nếu CHƯA: mở thư mục "Driver" ngay trên USB này, chạy file cài
+      trong đó, chờ xong rồi cắm lại iPhone. (Hoặc mở app rồi bấm nút
+      "Cài driver Apple" — app sẽ tự mở trình cài này.)
+    Không cần mạng; driver đã có sẵn trên USB.
+  • macOS: không cần cài gì thêm, cắm iPhone là nhận.
+  • Bật Chế độ nhà phát triển trên iPhone:
+    Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển → Bật.
+    (Nếu chưa thấy mục này, cứ mở app lần đầu, app sẽ làm nó hiện ra,
+     sau đó quay lại bật rồi mở app lại.)
+
+CÁCH DÙNG
+
+  1. Cắm iPhone vào máy bằng cáp. Mở khóa màn hình iPhone.
+     Nếu iPhone hỏi "Tin cậy máy tính này?" → bấm Tin cậy, nhập mật mã.
+
+  2. Mở app:
+       • Windows: bấm đúp VitriAo.exe. Nếu Windows hỏi quyền → chọn Yes.
+         (Lần đầu có thể hiện cảnh báo SmartScreen "Windows protected..."
+          → bấm "More info" → "Run anyway".)
+       • macOS: bấm chuột phải vào "Vị trí ảo iPhone" → Open → Open.
+         (Chỉ lần đầu phải làm vậy; lần sau bấm đúp như thường.)
+
+  3. Chờ bảng "Chuẩn bị kết nối iPhone" chạy hết các dấu ✓.
+     Làm theo hướng dẫn nếu có bước báo đỏ (mở khóa máy, bật Developer Mode...).
+
+  4. Khi iPhone đã kết nối, app hiện ô NHẬP KEY. Gõ key được cấp rồi bấm
+     "Kích hoạt". Chỉ cần làm 1 lần cho máy này; lần sau mở app dùng luôn.
+     (Bạn có thể kiểm tra app kết nối được iPhone TRƯỚC rồi mới cần key.)
+
+  5. Gõ địa chỉ / tên địa điểm vào ô tìm kiếm, hoặc bấm thẳng lên bản đồ,
+     hoặc dán toạ độ / link Google Maps. Có thể kéo ghim để chỉnh.
+
+  6. Bấm "Đổi vị trí" → iPhone chuyển sang điểm đã chọn.
+     Bấm "Dừng / Trả về" → iPhone về lại vị trí thật.
+
+  7. Xong thì đóng app. iPhone tự trở về vị trí thật.
+
+LƯU Ý
+  • Mỗi key kích hoạt cho ĐÚNG MỘT MÁY (máy đầu tiên nhập key). Dùng trên
+    máy khác cần liên hệ người cung cấp để được hỗ trợ.
+  • Nếu đổi/cài lại máy và cần dùng tiếp, liên hệ người cung cấp kèm
+    "mã máy" mà app hiển thị ở ô nhập key.

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+build/*/
+dist/
+*.spec.bak
+license.dat
+venv/
+.venv/
+tools/counter.txt
+*.csv
+keys*.txt
+app/appconfig.py
+server/config.php
+server/*.sqlite
+
+docs/CAU-HINH-GITHUB.txt

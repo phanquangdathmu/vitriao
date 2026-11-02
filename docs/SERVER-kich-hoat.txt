@@ -1,0 +1,47 @@
+=====================================================
+  DỰNG SERVER KÍCH HOẠT (PHP) — cho người phát hành
+=====================================================
+
+Mục tiêu: 1 key = 1 máy thật sự. Lần kích hoạt đầu app gọi về server; server
+nhớ "key này đã gắn máy nào" và từ chối máy thứ hai. Dùng thì vẫn offline.
+
+YÊU CẦU SERVER
+  • PHP 7.2+ có sẵn libsodium (sodium_*) và PDO SQLite (pdo_sqlite).
+    Gần như mọi hosting PHP hiện nay đều có.
+
+CÁC BƯỚC
+  1. Chép thư mục server/ lên hosting (ví dụ thư mục con /activate/).
+
+  2. Sinh cặp khóa Ed25519 (chạy ở máy anh):
+         python tools/genkeys.py
+     Được 2 dòng: ED25519_SEED_HEX (bí mật) và ED25519_PUBLIC_HEX (công khai).
+     (Không có Python? Chạy trên hosting một lần:
+         php -r '$kp=sodium_crypto_sign_keypair();
+           echo "SEED=".bin2hex(substr(sodium_crypto_sign_secretkey($kp),0,32))."\n";
+           echo "PUB=".bin2hex(sodium_crypto_sign_publickey($kp))."\n";'
+      rồi XÓA lệnh này đi.)
+
+  3. Tạo server/config.php từ config.sample.php, điền:
+       VITRIAO_SECRET   : chuỗi bí mật — PHẢI TRÙNG với secret dùng ở keygen.py
+       ED25519_SEED_HEX : seed vừa sinh (giữ tuyệt mật)
+       VITRIAO_ADMIN    : mã quản trị để gọi admin.php
+       VITRIAO_DB       : đường dẫn file SQLite (nên để ngoài thư mục web)
+
+  4. Nhúng vào app khi build trên GitHub (Settings → Secrets → Actions):
+       VITRIAO_ACTIVATE_URL = https://TÊN-MIỀN/activate/activate.php
+       VITRIAO_PUBKEY       = ED25519_PUBLIC_HEX (khóa công khai ở bước 2)
+
+  5. Sinh key bán hàng (secret phải trùng với config.php):
+       export VITRIAO_SECRET=...; python tools/keygen.py 50 --out keys.csv
+
+KHI KHÁCH ĐỔI/CÀI LẠI MÁY
+  Gọi (thay MÃ, KEY cho đúng):
+    https://TÊN-MIỀN/activate/admin.php?admin=MÃ&action=info&key=KEY     (xem)
+    https://TÊN-MIỀN/activate/admin.php?admin=MÃ&action=unbind&key=KEY   (mở khóa)
+  Sau khi unbind, khách nhập lại key là kích hoạt được trên máy mới.
+
+BẢO MẬT
+  • Đặt config.php và file .sqlite ngoài thư mục truy cập công khai nếu hosting
+    cho phép; tối thiểu đừng để tải về được.
+  • Giữ kín ED25519_SEED_HEX và VITRIAO_SECRET. Lộ seed thì ký được giấy phép giả;
+    lộ secret thì sinh được key giả.
