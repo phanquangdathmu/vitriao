@@ -131,6 +131,64 @@ def status():
 
 
 # ----------------------------------------------------------------------
+#  Dùng thử 1 ngày
+# ----------------------------------------------------------------------
+TRIAL_SECONDS = 24 * 3600
+
+
+def _trial_path():
+    base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) \
+        else os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, "trial.dat")
+
+
+def _trial_start():
+    try:
+        return float(json.load(open(_trial_path(), encoding="utf-8")).get("start", 0))
+    except Exception:
+        return 0
+
+
+def trial_used():
+    return _trial_start() > 0
+
+
+def trial_remaining():
+    """Số giây dùng thử còn lại (0 nếu chưa bắt đầu hoặc đã hết)."""
+    import time
+    st = _trial_start()
+    if st <= 0:
+        return 0
+    left = st + TRIAL_SECONDS - time.time()
+    return int(left) if left > 0 else 0
+
+
+def trial_active():
+    return trial_remaining() > 0
+
+
+def start_trial():
+    """Bắt đầu dùng thử 1 ngày. Chỉ cho bắt đầu một lần. (ok, thông báo)."""
+    import time
+    if trial_active():
+        return True, "Đang trong thời gian dùng thử."
+    if trial_used():
+        return False, "Bản dùng thử 1 ngày đã hết. Vui lòng nhập key để tiếp tục."
+    try:
+        p = _trial_path()
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump({"start": time.time()}, f)
+        _hide(p)
+    except Exception as e:
+        return False, f"Không ghi được dữ liệu dùng thử lên USB. {e}"
+    return True, "Đã bật dùng thử 1 ngày. Chúc bạn trải nghiệm vui vẻ!"
+
+
+def can_use():
+    return is_activated() or trial_active()
+
+
+# ----------------------------------------------------------------------
 #  Kích hoạt qua server
 # ----------------------------------------------------------------------
 def activate(key):

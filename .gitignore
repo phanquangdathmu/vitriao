@@ -4,6 +4,7 @@ build/*/
 dist/
 *.spec.bak
 license.dat
+trial.dat
 venv/
 .venv/
 tools/counter.txt
@@ -12,5 +13,3 @@ keys*.txt
 app/appconfig.py
 server/config.php
 server/*.sqlite
-
-docs/CAU-HINH-GITHUB.txt

@@ -1,0 +1,15 @@
+GIÁ TRỊ ĐẶT TRONG GITHUB SECRETS (Settings > Secrets and variables > Actions)
+================================================================
+
+VITRIAO_PUBKEY = 7c3460a4a812ad3a0197a9e50889da7e6054e4990ebb003873edc3c88deb5123
+
+VITRIAO_ACTIVATE_URL = https://TEN-MIEN-CUA-ANH/activate/activate.php
+   (sửa thành URL thật tới activate.php sau khi upload thư mục server/ lên hosting)
+
+Ghi chú:
+- VITRIAO_SECRET và seed đã nằm sẵn trong server/config.php (giữ kín).
+- Khi chạy keygen để sinh key bán, dùng ĐÚNG VITRIAO_SECRET trong config.php:
+     Windows CMD:  set VITRIAO_SECRET=<dán secret từ config.php>
+     rồi:          python tools\keygen.py 20 --out keys.csv
+- Mã quản trị (gọi admin.php) cũng nằm trong config.php (VITRIAO_ADMIN).
+- PUBKEY ở trên KHÔNG bí mật, cứ dán vào GitHub Secrets thoải mái.

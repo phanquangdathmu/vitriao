@@ -297,8 +297,8 @@ def stop_sim():
 
 
 def set_location(lat, lon):
-    if not state["licensed"]:
-        return False, "Vui lòng nhập key để kích hoạt trước khi đổi vị trí."
+    if not licensing.can_use():
+        return False, "Vui lòng nhập key (hoặc bật dùng thử) trước khi đổi vị trí."
     with lock:
         stop_sim()
         procs["sim"] = pmd_bg(SIM + ["set", "--", str(lat), str(lon)])
@@ -430,11 +430,14 @@ PAGE = r"""<!doctype html>
       style="width:100%;padding:10px;border:1px solid #bbb;border-radius:8px;font-size:17px;letter-spacing:1px;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace">
     <div id="keymsg" style="font-size:14px;margin:8px 0;min-height:18px"></div>
     <button id="btnActivate" style="background:#1a73e8;color:#fff;width:100%">Kích hoạt</button>
+    <button id="btnTrial" style="background:#eef1f4;color:#1f2328;width:100%;margin-top:8px">Dùng thử 1 ngày</button>
+    <div style="margin-top:8px"><a id="btnCloseKey" style="display:none;color:#1a73e8;cursor:pointer;font-size:13px">← Để sau, tiếp tục dùng thử</a></div>
     <div style="font-size:12px;color:#777;margin-top:9px">Chưa có key? Liên hệ người bán. Mã máy của bạn: <b id="mcode" style="font-family:ui-monospace,Consolas,monospace"></b></div>
   </div>
 </main>
 <footer>
   <span id="dev">Chưa kết nối iPhone</span>
+  <a id="btnShowKey" style="display:none;color:#1a73e8;cursor:pointer">Nhập key kích hoạt</a>
   <span>Điểm chọn: <span id="coord">chưa chọn</span></span>
   <span id="status"></span>
 </footer>
@@ -465,7 +468,7 @@ function choose(lat, lon, zoom, skipSave) {
     .on('dragend', e => { const p = e.target.getLatLng(); choose(p.lat, p.lng); });
   if (zoom) map.setView(pick, zoom);
   $('coord').textContent = lat.toFixed(6) + ', ' + lon.toFixed(6);
-  $('btnSet').disabled = !(ready && licensed);
+  $('btnSet').disabled = !(ready && canUse);
   if (!skipSave) {   // ghi nhớ địa điểm cuối (chờ 0.8s để khỏi lưu liên tục khi kéo ghim)
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveQuiet('/saveloc', {lat: pick[0], lon: pick[1], label: $('q').value.trim()}), 800);
@@ -558,7 +561,16 @@ $('btnStop').onclick = async () => {
 $('btnRecheck').onclick = () => post('/recheck');
 $('btnDriver').onclick = () => post('/install-driver');
 
-let licensed = false;
+let licensed = false, canUse = false, showKeyPanel = false;
+$('btnShowKey').onclick = () => { showKeyPanel = true; $('keypanel').style.display = 'block'; $('keyin').focus(); };
+$('btnCloseKey').onclick = () => { showKeyPanel = false; $('keypanel').style.display = 'none'; };
+$('btnTrial').onclick = async () => {
+  $('btnTrial').disabled = true;
+  const j = await post('/trial', {});
+  $('keymsg').textContent = j.msg || '';
+  $('keymsg').style.color = j.ok ? '#188038' : '#d93025';
+  $('btnTrial').disabled = false;
+};
 $('btnActivate').onclick = async () => {
   const key = $('keyin').value.trim();
   if (!key) return;
@@ -567,34 +579,47 @@ $('btnActivate').onclick = async () => {
   $('btnActivate').disabled = false;
   $('keymsg').textContent = j.msg || '';
   $('keymsg').style.color = j.ok ? '#188038' : '#d93025';
+  if (j.ok) showKeyPanel = false;
 };
 $('keyin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnActivate').click(); });
 
 const ICON = {ok: '✓', fail: '✗', run: '⏳', wait: '○', warn: '!', skip: '–'};
 function render(s) {
-  ready = s.ready; licensed = s.licensed;
+  ready = s.ready; licensed = s.licensed; canUse = s.can_use;
+  const trial = s.trial || {};
   if (!restored && s.last && !pick) {   // mở lại app: về địa điểm tìm lần trước
     restored = true;
     if (s.last.label) $('q').value = s.last.label;
     choose(s.last.lat, s.last.lon, 15, true);
   }
-  $('btnSet').disabled = !(ready && licensed && pick);
+  if (licensed) showKeyPanel = false;
+  const panelOpen = ready && !licensed && (!canUse || showKeyPanel);
+  $('btnSet').disabled = !(ready && canUse && pick);
   $('setup').style.display = ready ? 'none' : 'block';
-  $('keypanel').style.display = (ready && !licensed) ? 'block' : 'none';
+  $('keypanel').style.display = panelOpen ? 'block' : 'none';
+  // trong lúc dùng thử: cho mở ô nhập key để mua luôn
+  $('btnShowKey').style.display = (ready && !licensed && canUse && !panelOpen) ? 'inline' : 'none';
+  $('btnCloseKey').style.display = canUse ? 'inline' : 'none';  // chỉ cho đóng khi còn dùng thử
   $('mcode').textContent = s.code || '';
+  // nút dùng thử: đang thử -> ẩn; đã hết hạn -> khoá; chưa thử -> cho bấm
+  if (trial.active) { $('btnTrial').style.display = 'none'; }
+  else if (trial.used) { $('btnTrial').style.display = 'block'; $('btnTrial').disabled = true; $('btnTrial').textContent = 'Đã hết hạn dùng thử — cần nhập key'; }
+  else { $('btnTrial').style.display = 'block'; $('btnTrial').disabled = false; $('btnTrial').textContent = 'Dùng thử 1 ngày'; }
   $('steps').innerHTML = s.steps.map(x =>
     `<li><span class="ic ${x.st}">${ICON[x.st] || ''}</span><span class="${x.st === 'wait' ? 'wait' : ''}">${x.label}</span></li>`).join('');
   const cur = s.steps.find(x => x.st === 'fail' || x.st === 'run');
   $('help').textContent = cur ? cur.note : '';
   const warn = s.steps.find(x => x.st === 'warn');
   if (!ready) $('dev').innerHTML = 'Chưa kết nối iPhone';
-  else if (!licensed) $('dev').innerHTML = '✓ ' + s.device + ' · chờ kích hoạt';
-  else $('dev').innerHTML = '✓ ' + s.device + (warn ? ' (có cảnh báo)' : '') + ' · đã kích hoạt · <a id="lnkRe">kiểm tra lại</a>';
+  else if (licensed) $('dev').innerHTML = '✓ ' + s.device + (warn ? ' (có cảnh báo)' : '') + ' · đã kích hoạt · <a id="lnkRe">kiểm tra lại</a>';
+  else if (trial.active) $('dev').innerHTML = '✓ ' + s.device + ' · dùng thử còn ' + fmtLeft(trial.remaining_min) + ' · <a id="lnkRe">kiểm tra lại</a>';
+  else $('dev').innerHTML = '✓ ' + s.device + ' · chờ kích hoạt';
   const l = document.getElementById('lnkRe'); if (l) l.onclick = () => post('/recheck');
 }
+function fmtLeft(min) { min = min || 0; const h = Math.floor(min / 60), m = min % 60; return h > 0 ? (h + ' giờ ' + m + ' phút') : (m + ' phút'); }
 async function poll() {
   try { render(await (await fetch('/status')).json()); } catch (e) {}
-  setTimeout(poll, (ready && licensed) ? 4000 : 1200);
+  setTimeout(poll, (ready && canUse) ? 4000 : 1200);
 }
 poll();
 </script></body></html>"""
@@ -617,7 +642,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/":
             return self.send(200, PAGE, "text/html")
         if self.path == "/status":
-            return self.send(200, json.dumps(state))
+            s = dict(state)
+            s["licensed"] = licensing.is_activated()
+            rem = licensing.trial_remaining()
+            s["trial"] = {"active": rem > 0, "used": licensing.trial_used(), "remaining_min": (rem + 59) // 60}
+            s["can_use"] = s["licensed"] or rem > 0
+            return self.send(200, json.dumps(s))
         self.send(404, "{}")
 
     def do_POST(self):
@@ -649,6 +679,9 @@ class Handler(BaseHTTPRequestHandler):
             ok, msg = licensing.activate(str(body.get("key", "")))
             if ok:
                 state["licensed"] = True
+            return self.send(200, json.dumps({"ok": ok, "msg": msg}))
+        if self.path == "/trial":
+            ok, msg = licensing.start_trial()
             return self.send(200, json.dumps({"ok": ok, "msg": msg}))
         if self.path == "/saveloc":
             try:
