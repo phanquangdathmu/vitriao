@@ -17,6 +17,13 @@ for pkg in ("pymobiledevice3", "webview", "cryptography"):
 
 hiddenimports += ["plistlib", "winreg"] if sys.platform == "win32" else []
 
+# Windows: kèm wintun.dll (driver tunnel cho iOS 17+). Workflow tải sẵn vào build/wintun.dll.
+if sys.platform == "win32":
+    import os
+    _wt = os.path.join(SPECPATH, "wintun.dll")
+    if os.path.exists(_wt):
+        binaries += [(_wt, ".")]
+
 block_cipher = None
 
 a = Analysis(

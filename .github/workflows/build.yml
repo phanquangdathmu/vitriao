@@ -41,6 +41,14 @@ jobs:
           PUBLIC_KEY_HEX = "${{ secrets.VITRIAO_PUBKEY }}"
           EOF
 
+      - name: Tải wintun.dll (driver tunnel cho iOS 17+)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://www.wintun.net/builds/wintun-0.14.1.zip -OutFile wintun.zip
+          Expand-Archive wintun.zip -DestinationPath wintun_tmp -Force
+          Copy-Item wintun_tmp/wintun/bin/amd64/wintun.dll build/wintun.dll
+
       - name: Đóng gói
         run: pyinstaller build/vitriao.spec --noconfirm
 
@@ -52,6 +60,7 @@ jobs:
           New-Item -ItemType Directory -Force dist/pkg | Out-Null
           New-Item -ItemType Directory -Force dist/pkg/Driver | Out-Null
           Copy-Item dist/VitriAo.exe dist/pkg/
+          Copy-Item build/wintun.dll dist/pkg/ -ErrorAction SilentlyContinue
           Copy-Item docs/HUONG-DAN.txt dist/pkg/ -ErrorAction SilentlyContinue
           "Dat file driver Apple (AppleMobileDeviceSupport64.msi) vao thu muc nay. Xem docs/DRIVER-cho-nguoi-phat-hanh.txt" | Out-File -Encoding utf8 dist/pkg/Driver/DAT-DRIVER-VAO-DAY.txt
 

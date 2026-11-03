@@ -39,8 +39,22 @@ else:
 PMD = HELPER + ["--pmd"]
 SIM = ["developer", "dvt", "simulate-location"]
 TUNNELD_URL = "http://127.0.0.1:49151"
-CHILD_ENV = dict(os.environ, PYTHONIOENCODING="utf-8", NO_COLOR="1", TERM="dumb")
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+# Windows: chỉ cho trình nạp DLL biết chỗ có wintun.dll (cạnh exe và trong thư mục giải nén).
+# Chạy ở cấp module nên áp dụng cho cả tiến trình chính lẫn tiến trình con "--pmd".
+EXE_DIR = os.path.dirname(sys.executable) if FROZEN else os.path.dirname(os.path.abspath(__file__))
+if IS_WIN:
+    for _d in [EXE_DIR, getattr(sys, "_MEIPASS", None)]:
+        if _d and os.path.isdir(_d):
+            try:
+                os.add_dll_directory(_d)
+            except Exception:
+                pass
+    os.environ["PATH"] = EXE_DIR + os.pathsep + os.environ.get("PATH", "")
+
+CHILD_ENV = dict(os.environ, PYTHONIOENCODING="utf-8", NO_COLOR="1", TERM="dumb")
+CHILD_CWD = EXE_DIR if FROZEN else None     # để tiến trình con tìm wintun.dll theo thư mục hiện hành
 
 
 # ======================================================================
@@ -55,7 +69,7 @@ def run_pmd_inprocess(args):
 def pmd(args, timeout=60):
     try:
         r = subprocess.run(PMD + args, capture_output=True, text=True, encoding="utf-8", errors="ignore",
-                           timeout=timeout, creationflags=NOWIN, env=CHILD_ENV)
+                           timeout=timeout, creationflags=NOWIN, env=CHILD_ENV, cwd=CHILD_CWD)
         return r.returncode, ANSI.sub("", r.stdout or ""), ANSI.sub("", r.stderr or "")
     except subprocess.TimeoutExpired:
         return -1, "", "timeout"
@@ -65,7 +79,7 @@ def pmd(args, timeout=60):
 
 def pmd_bg(args):
     return subprocess.Popen(PMD + args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
-                            creationflags=NOWIN, env=CHILD_ENV)
+                            creationflags=NOWIN, env=CHILD_ENV, cwd=CHILD_CWD)
 
 
 def first_json(text):

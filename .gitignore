@@ -13,3 +13,6 @@ keys*.txt
 app/appconfig.py
 server/config.php
 server/*.sqlite
+build/wintun.dll
+wintun.zip
+wintun_tmp/
